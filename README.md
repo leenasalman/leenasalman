@@ -1,6 +1,6 @@
 
 
-**leenasalman/leenasalman** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+<!-- **leenasalman/leenasalman** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile. -->
 
 - 👋 Hi, I'm Leena 
 - 😄 My pronouns are she/her
