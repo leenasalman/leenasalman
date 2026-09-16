@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./demo/App";
-import "./openui/theme.css";
+import "./renderer/theme.css";
 import "./demo/app.css";
 
 const container = document.getElementById("root");

@@ -1,60 +1,120 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { A2UIEvent } from "../a2ui/schema";
-import { useA2UISurface } from "../render/A2UISurface";
-import { componentNames } from "../openui/registry";
-import { demoAgent } from "./agent";
+import type { ActionMessage } from "../a2ui/protocol";
+import { useA2UIClient } from "../renderer/A2UIClient";
+import { catalogComponentNames } from "../renderer/catalog";
+import { ANSWER_SURFACE, scriptedAgent } from "../agent/scriptedAgent";
+
+interface LogEntry {
+  direction: "out" | "in";
+  summary: string;
+  payload: unknown;
+}
+
+const EXAMPLES = ["what should I cook tonight?", "plan a weekend trip", "compare these laptops"];
 
 export function App() {
-  const [log, setLog] = useState<string[]>([]);
-  const appendLog = useCallback((line: string) => {
-    setLog((entries) => [...entries.slice(-40), line]);
+  const [query, setQuery] = useState("");
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const [showRaw, setShowRaw] = useState(false);
+
+  const append = useCallback((direction: "out" | "in", summary: string, payload: unknown) => {
+    setLog((entries) => [...entries.slice(-60), { direction, summary, payload }]);
   }, []);
 
-  const agentRef = useRef(demoAgent(appendLog));
+  const agentRef = useRef(scriptedAgent(append));
 
-  const onEvent = useCallback((event: A2UIEvent) => {
-    void agentRef.current.handleEvent(event);
+  const onAction = useCallback((message: ActionMessage) => {
+    void agentRef.current.handleAction(message);
   }, []);
 
-  const { state, send, view } = useA2UISurface(onEvent);
+  const client = useA2UIClient(onAction);
+  const { receive } = client;
 
-  // `send` is stable, so the agent connects exactly once.
   useEffect(() => {
-    void agentRef.current.connect(send);
-    return () => agentRef.current.disconnect?.();
-  }, [send]);
+    agentRef.current.connect(receive);
+  }, [receive]);
+
+  const ask = (text: string) => {
+    const trimmed = text.trim();
+    if (trimmed === "") return;
+    setLog([]);
+    void agentRef.current.ask(trimmed);
+  };
+
+  const surface = client.state.surfaces[ANSWER_SURFACE];
 
   return (
     <main className="app">
       <header className="app-header">
         <h1>A2UI</h1>
         <p>
-          An agent-to-UI protocol, rendered by OpenUI. The agent emits declarative nodes; the host
-          resolves them against a registry of {componentNames.length} components.
+          A conformant renderer for Google&rsquo;s{" "}
+          <a href="https://github.com/google/A2UI" target="_blank" rel="noopener noreferrer">
+            A2UI v0.9.1
+          </a>{" "}
+          protocol. The agent answers with a declarative interface — a flat component list, JSON
+          Pointer bindings and functions this renderer already implements. All{" "}
+          {catalogComponentNames.length} basic-catalog components are supported.
         </p>
       </header>
 
+      <form
+        className="app-ask"
+        onSubmit={(event) => {
+          event.preventDefault();
+          ask(query);
+        }}
+      >
+        <input
+          className="app-input"
+          value={query}
+          placeholder="Ask anything…"
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="Ask the agent"
+        />
+        <button className="app-submit" type="submit">Ask</button>
+      </form>
+
+      <div className="app-examples">
+        {EXAMPLES.map((example) => (
+          <button key={example} type="button" className="app-example" onClick={() => { setQuery(example); ask(example); }}>
+            {example}
+          </button>
+        ))}
+      </div>
+
       <div className="app-grid">
-        <section className="app-surface" aria-label="Agent surface">
-          {view ?? <p className="oui-text oui-tone-muted">Waiting for the agent…</p>}
-          {state.warnings.map((warning, i) => (
-            <div key={i} className="oui-alert oui-alert-warning" role="status">
-              {warning}
-            </div>
+        <section className="app-surface" aria-label="Generated interface">
+          {surface ? (
+            client.surface(ANSWER_SURFACE)
+          ) : (
+            <p className="app-empty">Ask something and the agent will generate an interface for it.</p>
+          )}
+          {client.state.warnings.map((warning, index) => (
+            <div key={index} className="a2ui-diagnostic" role="status">{warning}</div>
           ))}
         </section>
 
-        <aside className="app-inspector" aria-label="Protocol inspector">
-          <h2>Traffic</h2>
+        <aside className="app-inspector" aria-label="Protocol traffic">
+          <div className="app-inspector-head">
+            <h2>Wire traffic</h2>
+            <button type="button" className="app-toggle" onClick={() => setShowRaw((value) => !value)}>
+              {showRaw ? "summary" : "raw JSON"}
+            </button>
+          </div>
           <ol className="app-log">
-            {log.map((line, i) => (
-              <li key={i} className={line.startsWith("→") ? "log-out" : "log-in"}>
-                {line}
+            {log.length === 0 && <li className="app-log-idle">nothing yet</li>}
+            {log.map((entry, index) => (
+              <li key={index} className={entry.direction === "out" ? "log-out" : "log-in"}>
+                <span className="log-arrow">{entry.direction === "out" ? "→" : "←"}</span>
+                {entry.summary}
+                {showRaw && <pre className="log-payload">{JSON.stringify(entry.payload, null, 2)}</pre>}
               </li>
             ))}
           </ol>
-          <h2>Data store</h2>
-          <pre className="app-json">{JSON.stringify(state.data, null, 2)}</pre>
+
+          <h2>Data model</h2>
+          <pre className="app-json">{JSON.stringify(surface?.dataModel ?? {}, null, 2)}</pre>
         </aside>
       </div>
     </main>

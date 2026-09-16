@@ -1,0 +1,112 @@
+/* Styles for the A2UI basic catalog. Tokens on :root so a host can restyle
+   every agent-generated surface without touching component code. */
+:root {
+  --a2ui-bg: #ffffff;
+  --a2ui-fg: #16181d;
+  --a2ui-muted: #6b7280;
+  --a2ui-border: #e4e6eb;
+  --a2ui-accent: #3b5bfd;
+  --a2ui-accent-fg: #ffffff;
+  --a2ui-radius: 10px;
+  --a2ui-gap: 12px;
+  --a2ui-error: #c0342b;
+  --a2ui-error-bg: #fdeceb;
+}
+
+.a2ui-row, .a2ui-column, .a2ui-list { display: flex; gap: var(--a2ui-gap); min-width: 0; }
+.a2ui-list-horizontal { overflow-x: auto; }
+.a2ui-row > *, .a2ui-list-horizontal > * { min-width: 0; }
+
+.a2ui-card {
+  background: var(--a2ui-bg);
+  border: 1px solid var(--a2ui-border);
+  border-radius: var(--a2ui-radius);
+  padding: 20px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.a2ui-divider { border: 0; border-top: 1px solid var(--a2ui-border); width: 100%; margin: 4px 0; }
+.a2ui-divider-vertical { border-top: 0; border-left: 1px solid var(--a2ui-border); width: 0; align-self: stretch; margin: 0 4px; }
+
+.a2ui-text { margin: 0; line-height: 1.55; }
+.a2ui-text-h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; }
+.a2ui-text-h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.015em; }
+.a2ui-text-h3 { font-size: 1.25rem; font-weight: 650; }
+.a2ui-text-h4 { font-size: 1.05rem; font-weight: 650; }
+.a2ui-text-h5 { font-size: 0.95rem; font-weight: 650; }
+.a2ui-text-caption { font-size: 0.85rem; color: var(--a2ui-muted); }
+.a2ui-text code { background: #f1f2f6; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+.a2ui-text a { color: var(--a2ui-accent); }
+
+.a2ui-image { max-width: 100%; border-radius: var(--a2ui-radius); display: block; }
+.a2ui-image-icon { width: 24px; height: 24px; }
+.a2ui-image-avatar { width: 44px; height: 44px; border-radius: 50%; }
+.a2ui-image-smallFeature { max-height: 120px; }
+.a2ui-image-header { width: 100%; max-height: 220px; }
+.a2ui-icon { display: inline-flex; align-items: center; }
+.a2ui-video, .a2ui-audio audio { width: 100%; border-radius: var(--a2ui-radius); }
+.a2ui-audio { display: flex; flex-direction: column; gap: 6px; }
+.a2ui-audio-title { font-size: 0.85rem; color: var(--a2ui-muted); }
+
+.a2ui-tabs { display: flex; flex-direction: column; gap: 14px; }
+.a2ui-tablist { display: flex; gap: 4px; border-bottom: 1px solid var(--a2ui-border); }
+.a2ui-tab {
+  font: inherit; background: none; border: 0; cursor: pointer;
+  padding: 9px 14px; color: var(--a2ui-muted); border-bottom: 2px solid transparent;
+}
+.a2ui-tab-active { color: var(--a2ui-fg); font-weight: 600; border-bottom-color: var(--a2ui-accent); }
+
+.a2ui-modal-host { display: contents; }
+.a2ui-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(12, 14, 20, 0.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10;
+}
+.a2ui-modal {
+  background: var(--a2ui-bg); border-radius: var(--a2ui-radius); padding: 24px;
+  max-width: 520px; width: 100%; position: relative;
+}
+.a2ui-modal-close { position: absolute; top: 12px; right: 12px; background: none; border: 0; cursor: pointer; font-size: 1rem; }
+
+.a2ui-field { display: flex; flex-direction: column; gap: 6px; }
+.a2ui-label { font-size: 0.85rem; font-weight: 600; }
+.a2ui-input {
+  font: inherit; color: inherit; background: var(--a2ui-bg);
+  padding: 9px 11px; border: 1px solid var(--a2ui-border);
+  border-radius: 8px; width: 100%; box-sizing: border-box;
+}
+.a2ui-input:focus-visible { outline: 2px solid var(--a2ui-accent); outline-offset: 1px; }
+.a2ui-textarea { resize: vertical; }
+.a2ui-invalid { border-color: var(--a2ui-error); }
+.a2ui-error { font-size: 0.8rem; color: var(--a2ui-error); }
+
+.a2ui-checkbox { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.a2ui-choice { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.a2ui-choice-list { display: flex; flex-direction: column; gap: 6px; }
+.a2ui-choice-filter { max-width: 240px; }
+.a2ui-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.a2ui-chip {
+  font: inherit; font-size: 0.85rem; cursor: pointer;
+  padding: 6px 13px; border-radius: 999px;
+  border: 1px solid var(--a2ui-border); background: var(--a2ui-bg);
+}
+.a2ui-chip-selected { background: var(--a2ui-accent); color: var(--a2ui-accent-fg); border-color: var(--a2ui-accent); }
+
+.a2ui-slider { width: 100%; accent-color: var(--a2ui-accent); }
+.a2ui-slider-value { color: var(--a2ui-muted); font-weight: 400; }
+
+.a2ui-button {
+  font: inherit; font-weight: 600; cursor: pointer;
+  padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--a2ui-border); background: var(--a2ui-bg); color: var(--a2ui-fg);
+  width: fit-content;
+}
+.a2ui-button .a2ui-text { margin: 0; }
+.a2ui-button-primary { background: var(--a2ui-accent); color: var(--a2ui-accent-fg); border-color: var(--a2ui-accent); }
+.a2ui-button-borderless { border-color: transparent; background: none; color: var(--a2ui-accent); }
+
+.a2ui-diagnostic {
+  background: var(--a2ui-error-bg); color: var(--a2ui-error);
+  padding: 10px 13px; border-radius: 8px; font-size: 0.86rem;
+}
+.a2ui-diagnostic code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

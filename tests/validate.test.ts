@@ -1,79 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { parseMessage, validateMessage, validateNodeTree } from "../src/a2ui/validate";
-
-describe("node validation", () => {
-  it("accepts a well-formed tree", () => {
-    expect(
-      validateNodeTree({
-        id: "root",
-        component: "Stack",
-        children: ["text", { component: "Button", props: { label: "Go" } }],
-      }),
-    ).toEqual([]);
-  });
-
-  it("requires a component name", () => {
-    const errors = validateNodeTree({ id: "a" });
-    expect(errors).toHaveLength(1);
-    expect(errors[0].path).toBe("root.component");
-  });
-
-  it("reports the path of a nested failure", () => {
-    const errors = validateNodeTree({
-      component: "Stack",
-      children: [{ component: "Card", children: [{ props: {} }] }],
-    });
-    expect(errors[0].path).toBe("root.children[0].children[0].component");
-  });
-
-  it("rejects cyclic props instead of hanging", () => {
-    const props: Record<string, unknown> = { label: "x" };
-    props.self = props;
-    const errors = validateNodeTree({ component: "Text", props });
-    expect(errors[0].message).toMatch(/acyclic/);
-  });
-
-  it("rejects a tree deeper than the limit", () => {
-    let node: Record<string, unknown> = { component: "Text" };
-    for (let i = 0; i < 70; i++) node = { component: "Stack", children: [node] };
-    expect(validateNodeTree(node).some((e) => /deeper than/.test(e.message))).toBe(true);
-  });
-
-  it("validates action shape", () => {
-    const errors = validateNodeTree({
-      component: "Button",
-      on: { click: { action: "", collect: "nope" } },
-    });
-    expect(errors.map((e) => e.path)).toEqual([
-      "root.on.click.action",
-      "root.on.click.collect",
-    ]);
-  });
-});
+import { BASIC_CATALOG_ID } from "../src/a2ui/protocol";
+import { parseMessage, validateMessage } from "../src/a2ui/validate";
 
 describe("message validation", () => {
-  it("accepts each message type", () => {
-    expect(validateMessage({ type: "ui.render", root: { component: "Text" } })).toEqual([]);
-    expect(
-      validateMessage({ type: "ui.patch", target: "a", op: "replace", node: { component: "Text" } }),
-    ).toEqual([]);
-    expect(validateMessage({ type: "ui.state", data: { a: 1 } })).toEqual([]);
+  it("accepts each payload type", () => {
+    expect(validateMessage({ version: "v0.9", createSurface: { surfaceId: "s", catalogId: BASIC_CATALOG_ID } })).toEqual([]);
+    expect(validateMessage({ updateComponents: { surfaceId: "s", components: [{ id: "root", component: "Text" }] } })).toEqual([]);
+    expect(validateMessage({ updateDataModel: { surfaceId: "s", value: 1 } })).toEqual([]);
+    expect(validateMessage({ deleteSurface: { surfaceId: "s" } })).toEqual([]);
   });
 
-  it("requires a node for replace and append but not remove", () => {
-    expect(validateMessage({ type: "ui.patch", target: "a", op: "append" })[0].path).toBe("node");
-    expect(validateMessage({ type: "ui.patch", target: "a", op: "remove" })).toEqual([]);
+  it("requires exactly one payload key", () => {
+    expect(validateMessage({ version: "v0.9" })[0].message).toMatch(/must carry one of/);
     expect(
-      validateMessage({ type: "ui.patch", target: "a", op: "remove", node: { component: "Text" } })[0]
-        .message,
-    ).toMatch(/omitted/);
+      validateMessage({ deleteSurface: { surfaceId: "s" }, updateDataModel: { surfaceId: "s" } })[0].message,
+    ).toMatch(/exactly one payload/);
   });
 
-  it("rejects an unknown type", () => {
-    expect(validateMessage({ type: "ui.nope" })[0].path).toBe("type");
+  it("requires surfaceId and catalogId", () => {
+    expect(validateMessage({ createSurface: {} }).map((e) => e.path).sort()).toEqual([
+      "createSurface.catalogId",
+      "createSurface.surfaceId",
+    ]);
+  });
+
+  it("checks component entries", () => {
+    const errors = validateMessage({
+      updateComponents: { surfaceId: "s", components: [{ id: "a" }, { component: "Text" }] },
+    });
+    expect(errors.map((e) => e.path)).toEqual([
+      "updateComponents.components[0].component",
+      "updateComponents.components[1].id",
+    ]);
+  });
+
+  it("rejects a duplicate id within one batch", () => {
+    const errors = validateMessage({
+      updateComponents: {
+        surfaceId: "s",
+        components: [{ id: "a", component: "Text" }, { id: "a", component: "Text" }],
+      },
+    });
+    expect(errors[0].message).toMatch(/duplicate id "a"/);
+  });
+
+  it("requires an absolute pointer for updateDataModel", () => {
+    expect(validateMessage({ updateDataModel: { surfaceId: "s", path: "user/name" } })[0].message)
+      .toMatch(/absolute JSON Pointer/);
   });
 
   it("throws with every error listed", () => {
-    expect(() => parseMessage({ type: "ui.patch", op: "bogus" })).toThrowError(/target.*op|op.*target/s);
+    expect(() => parseMessage({ createSurface: {} })).toThrowError(/surfaceId.*catalogId|catalogId.*surfaceId/s);
   });
 });
